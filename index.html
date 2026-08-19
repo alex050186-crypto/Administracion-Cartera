@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Administración de Cartera</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4"></script>
     <style>
         * {
             margin: 0;
@@ -20,7 +22,7 @@
         }
         
         .container {
-            max-width: 1400px;
+            max-width: 1600px;
             margin: 0 auto;
         }
         
@@ -31,7 +33,7 @@
             border-bottom: 2px solid rgba(59, 130, 246, 0.3);
             padding: 30px;
             border-radius: 10px;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
         }
         
@@ -47,6 +49,155 @@
         .header p {
             font-size: 1.1em;
             color: #94a3b8;
+        }
+        
+        /* Filter Section */
+        .filter-section {
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+        
+        .filter-title {
+            font-size: 1.1em;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #f1f5f9;
+        }
+        
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .filter-item {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .filter-label {
+            font-size: 0.85em;
+            color: #94a3b8;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .filter-input,
+        .filter-select {
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            color: #e2e8f0;
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: all 0.3s ease;
+        }
+        
+        .filter-input:focus,
+        .filter-select:focus {
+            outline: none;
+            border-color: rgba(59, 130, 246, 0.7);
+            background: rgba(15, 23, 42, 0.7);
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+        }
+        
+        .filter-buttons {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
+        }
+        
+        .btn-secondary {
+            background: rgba(59, 130, 246, 0.1);
+            color: #60a5fa;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(59, 130, 246, 0.2);
+        }
+        
+        .quick-filters {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-tag {
+            padding: 8px 16px;
+            border-radius: 20px;
+            background: rgba(59, 130, 246, 0.15);
+            border: 1px solid rgba(59, 130, 246, 0.4);
+            color: #60a5fa;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+        
+        .filter-tag:hover,
+        .filter-tag.active {
+            background: rgba(59, 130, 246, 0.4);
+            border-color: rgba(59, 130, 246, 0.7);
+        }
+        
+        /* Stats Summary */
+        .stats-summary {
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+        
+        .stat-item {
+            text-align: center;
+            padding: 10px;
+        }
+        
+        .stat-label {
+            font-size: 0.8em;
+            color: #94a3b8;
+            margin-bottom: 5px;
+        }
+        
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
         
         /* Grid Layout */
@@ -134,7 +285,7 @@
         /* Charts Section */
         .charts-section {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
             gap: 20px;
             margin-bottom: 30px;
         }
@@ -153,6 +304,11 @@
             font-weight: 600;
             margin-bottom: 20px;
             color: #f1f5f9;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 300px;
         }
         
         /* Simple Chart Bars */
@@ -195,6 +351,37 @@
             border-radius: 12px;
             padding: 25px;
             overflow-x: auto;
+            margin-bottom: 30px;
+        }
+        
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .table-header h2 {
+            font-size: 1.3em;
+            color: #f1f5f9;
+        }
+        
+        .table-search {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .search-input {
+            padding: 8px 12px;
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            color: #e2e8f0;
+            border-radius: 6px;
+            width: 200px;
+        }
+        
+        .search-input::placeholder {
+            color: #64748b;
         }
         
         table {
@@ -237,6 +424,65 @@
             color: #fca5a5;
         }
         
+        /* Alerts */
+        .alerts-section {
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .alerts-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #f1f5f9;
+        }
+        
+        .alert-item {
+            background: rgba(15, 23, 42, 0.5);
+            border-left: 4px solid #f59e0b;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .alert-item.critical {
+            border-left-color: #ef4444;
+        }
+        
+        .alert-item.info {
+            border-left-color: #3b82f6;
+        }
+        
+        .alert-content {
+            flex: 1;
+        }
+        
+        .alert-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .alert-message {
+            font-size: 0.9em;
+            color: #cbd5e1;
+        }
+        
+        .alert-action {
+            margin-left: 15px;
+        }
+        
+        .btn-small {
+            padding: 5px 12px;
+            font-size: 0.85em;
+        }
+        
         /* Footer */
         .footer {
             text-align: center;
@@ -246,12 +492,18 @@
         }
         
         /* Responsive */
+        @media (max-width: 1024px) {
+            .charts-section {
+                grid-template-columns: 1fr;
+            }
+        }
+        
         @media (max-width: 768px) {
             .dashboard {
                 grid-template-columns: 1fr;
             }
             
-            .charts-section {
+            .filter-grid {
                 grid-template-columns: 1fr;
             }
             
@@ -262,6 +514,14 @@
             .metric-value {
                 font-size: 2em;
             }
+            
+            .search-input {
+                width: 150px;
+            }
+        }
+        
+        .hidden {
+            display: none;
         }
     </style>
 </head>
@@ -273,6 +533,85 @@
             <p>Administración y seguimiento de indicadores de inversión</p>
         </div>
         
+        <!-- Filter Section -->
+        <div class="filter-section">
+            <div class="filter-title">🔍 Filtros y Búsqueda</div>
+            <div class="filter-grid">
+                <div class="filter-item">
+                    <label class="filter-label">Rango de Fechas</label>
+                    <select class="filter-select" id="dateRange">
+                        <option value="week">Esta Semana</option>
+                        <option value="month">Este Mes</option>
+                        <option value="quarter">Este Trimestre</option>
+                        <option value="year">Este Año</option>
+                        <option value="all">Todo el Período</option>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <label class="filter-label">Fecha Inicial</label>
+                    <input type="date" class="filter-input" id="startDate">
+                </div>
+                <div class="filter-item">
+                    <label class="filter-label">Fecha Final</label>
+                    <input type="date" class="filter-input" id="endDate">
+                </div>
+                <div class="filter-item">
+                    <label class="filter-label">Tipo de Activo</label>
+                    <select class="filter-select" id="assetType">
+                        <option value="">Todos</option>
+                        <option value="acciones">Acciones</option>
+                        <option value="bonos">Bonos</option>
+                        <option value="crypto">Criptomonedas</option>
+                        <option value="fondos">Fondos Mutuos</option>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <label class="filter-label">Rendimiento Mínimo</label>
+                    <input type="number" class="filter-input" id="minReturn" placeholder="-50" step="0.1">
+                </div>
+                <div class="filter-item">
+                    <label class="filter-label">Rendimiento Máximo</label>
+                    <input type="number" class="filter-input" id="maxReturn" placeholder="100" step="0.1">
+                </div>
+            </div>
+            
+            <div style="margin-top: 15px;">
+                <div class="filter-label" style="margin-bottom: 10px;">Filtros Rápidos</div>
+                <div class="quick-filters">
+                    <div class="filter-tag active" onclick="setQuickFilter('week')">📅 Esta Semana</div>
+                    <div class="filter-tag" onclick="setQuickFilter('month')">📊 Este Mes</div>
+                    <div class="filter-tag" onclick="setQuickFilter('quarter')">📈 Este Trimestre</div>
+                    <div class="filter-tag" onclick="setQuickFilter('positive')">📈 Ganadores</div>
+                    <div class="filter-tag" onclick="setQuickFilter('negative')">📉 Perdedores</div>
+                </div>
+            </div>
+            
+            <div style="margin-top: 15px; display: flex; gap: 10px; justify-content: flex-end;">
+                <button class="btn btn-primary" onclick="applyFilters()">🔍 Aplicar Filtros</button>
+                <button class="btn btn-secondary" onclick="resetFilters()">↻ Limpiar</button>
+            </div>
+        </div>
+        
+        <!-- Stats Summary -->
+        <div class="stats-summary">
+            <div class="stat-item">
+                <div class="stat-label">Período Seleccionado</div>
+                <div class="stat-value" id="periodLabel">Esta Semana</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Total de Activos</div>
+                <div class="stat-value" id="totalAssets">6</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Activos Ganadores</div>
+                <div class="stat-value" id="winningAssets">5</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Promedio Rendimiento</div>
+                <div class="stat-value" id="avgReturn">+8.3%</div>
+            </div>
+        </div>
+        
         <!-- KPIs Section -->
         <div class="dashboard">
             <div class="card">
@@ -282,20 +621,20 @@
                 </div>
                 <div class="metric">
                     <div class="metric-label">Valor</div>
-                    <div class="metric-value">$125,450</div>
-                    <div class="metric-change positive">↑ +12.5% vs. mes anterior</div>
+                    <div class="metric-value" id="totalValue">$125,450</div>
+                    <div class="metric-change positive" id="totalChange">↑ +12.5% vs. período anterior</div>
                 </div>
             </div>
             
             <div class="card">
                 <div class="card-header">
-                    <div class="card-title">Retorno YTD</div>
+                    <div class="card-title">Retorno Período</div>
                     <div class="card-icon">📈</div>
                 </div>
                 <div class="metric">
                     <div class="metric-label">Rentabilidad</div>
-                    <div class="metric-value">+18.3%</div>
-                    <div class="metric-change positive">↑ +2.1% vs. último mes</div>
+                    <div class="metric-value" id="periodReturn">+18.3%</div>
+                    <div class="metric-change positive" id="periodChange">↑ +2.1% vs. período anterior</div>
                 </div>
             </div>
             
@@ -306,8 +645,8 @@
                 </div>
                 <div class="metric">
                     <div class="metric-label">Desviación Estándar</div>
-                    <div class="metric-value">8.7%</div>
-                    <div class="metric-change negative">↓ -1.2% vs. mes anterior</div>
+                    <div class="metric-value" id="volatility">8.7%</div>
+                    <div class="metric-change negative" id="volatilityChange">↓ -1.2% vs. período anterior</div>
                 </div>
             </div>
             
@@ -318,8 +657,42 @@
                 </div>
                 <div class="metric">
                     <div class="metric-label">Rendimiento Ajustado</div>
-                    <div class="metric-value">2.10</div>
-                    <div class="metric-change positive">↑ +0.45 vs. mes anterior</div>
+                    <div class="metric-value" id="sharpeRatio">2.10</div>
+                    <div class="metric-change positive" id="sharpeChange">↑ +0.45 vs. período anterior</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Alerts Section -->
+        <div class="alerts-section">
+            <div class="alerts-title">⚠️ Alertas y Notificaciones</div>
+            <div id="alertsContainer">
+                <div class="alert-item critical">
+                    <div class="alert-content">
+                        <div class="alert-title">Fondo Mutuo en Caída</div>
+                        <div class="alert-message">XYZ ha bajado -5.2% esta semana. Considera revisar tu posición.</div>
+                    </div>
+                    <div class="alert-action">
+                        <button class="btn btn-secondary btn-small">Ver Detalles</button>
+                    </div>
+                </div>
+                <div class="alert-item info">
+                    <div class="alert-content">
+                        <div class="alert-title">Oportunidad de Rebalanceo</div>
+                        <div class="alert-message">Bitcoin ha alcanzado +22.8%. Considera tomar ganancias.</div>
+                    </div>
+                    <div class="alert-action">
+                        <button class="btn btn-secondary btn-small">Rebalancear</button>
+                    </div>
+                </div>
+                <div class="alert-item info">
+                    <div class="alert-content">
+                        <div class="alert-title">Buen Rendimiento</div>
+                        <div class="alert-message">Tu cartera ha generado +$8,425 esta semana (+7.2%).</div>
+                    </div>
+                    <div class="alert-action">
+                        <button class="btn btn-secondary btn-small">Descartar</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -327,51 +700,25 @@
         <!-- Charts Section -->
         <div class="charts-section">
             <div class="chart-card">
-                <div class="chart-title">📌 Distribución por Activo</div>
-                <div class="chart-bar">
-                    <div class="bar-label">
-                        <span>Acciones (USA)</span>
-                        <span>45%</span>
-                    </div>
-                    <div class="bar-container">
-                        <div class="bar-fill" style="width: 45%"></div>
-                    </div>
-                </div>
-                <div class="chart-bar">
-                    <div class="bar-label">
-                        <span>Bonos</span>
-                        <span>25%</span>
-                    </div>
-                    <div class="bar-container">
-                        <div class="bar-fill" style="width: 25%"></div>
-                    </div>
-                </div>
-                <div class="chart-bar">
-                    <div class="bar-label">
-                        <span>Criptomonedas</span>
-                        <span>20%</span>
-                    </div>
-                    <div class="bar-container">
-                        <div class="bar-fill" style="width: 20%"></div>
-                    </div>
-                </div>
-                <div class="chart-bar">
-                    <div class="bar-label">
-                        <span>Efectivo</span>
-                        <span>10%</span>
-                    </div>
-                    <div class="bar-container">
-                        <div class="bar-fill" style="width: 10%"></div>
-                    </div>
+                <div class="chart-title">📊 Desempeño por Período</div>
+                <div class="chart-container">
+                    <canvas id="performanceChart"></canvas>
                 </div>
             </div>
             
             <div class="chart-card">
-                <div class="chart-title">📊 Rendimiento Mensual</div>
+                <div class="chart-title">📌 Distribución por Activo</div>
+                <div class="chart-container">
+                    <canvas id="allocationChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="chart-card">
+                <div class="chart-title">💹 Retorno Semanal</div>
                 <div class="chart-bar">
                     <div class="bar-label">
-                        <span>Enero</span>
-                        <span>+4.2%</span>
+                        <span>Semana 1</span>
+                        <span id="week1">+4.2%</span>
                     </div>
                     <div class="bar-container">
                         <div class="bar-fill" style="width: 65%"></div>
@@ -379,8 +726,8 @@
                 </div>
                 <div class="chart-bar">
                     <div class="bar-label">
-                        <span>Febrero</span>
-                        <span>+2.1%</span>
+                        <span>Semana 2</span>
+                        <span id="week2">+2.1%</span>
                     </div>
                     <div class="bar-container">
                         <div class="bar-fill" style="width: 35%"></div>
@@ -388,8 +735,8 @@
                 </div>
                 <div class="chart-bar">
                     <div class="bar-label">
-                        <span>Marzo</span>
-                        <span>-1.5%</span>
+                        <span>Semana 3</span>
+                        <span id="week3">-1.5%</span>
                     </div>
                     <div class="bar-container">
                         <div class="bar-fill" style="width: 15%; background: linear-gradient(90deg, #ef4444 0%, #f87171 100%);"></div>
@@ -397,34 +744,45 @@
                 </div>
                 <div class="chart-bar">
                     <div class="bar-label">
-                        <span>Abril</span>
-                        <span>+5.8%</span>
+                        <span>Semana 4</span>
+                        <span id="week4">+5.8%</span>
                     </div>
                     <div class="bar-container">
                         <div class="bar-fill" style="width: 75%"></div>
                     </div>
                 </div>
             </div>
+            
+            <div class="chart-card">
+                <div class="chart-title">📈 Valor de Cartera en Tiempo</div>
+                <div class="chart-container">
+                    <canvas id="valueChart"></canvas>
+                </div>
+            </div>
         </div>
         
         <!-- Activos Table -->
         <div class="table-section">
-            <div style="margin-bottom: 20px;">
-                <h2 style="font-size: 1.3em; color: #f1f5f9;">📋 Detalle de Activos</h2>
+            <div class="table-header">
+                <h2>📋 Detalle de Activos</h2>
+                <div class="table-search">
+                    <input type="text" class="search-input" id="tableSearch" placeholder="Buscar activo...">
+                </div>
             </div>
             <table>
                 <thead>
                     <tr>
-                        <th>Activo</th>
-                        <th>Cantidad</th>
-                        <th>Precio Unitario</th>
-                        <th>Valor Total</th>
-                        <th>% Cartera</th>
-                        <th>Retorno</th>
+                        <th onclick="sortTable(0)">Activo 🔄</th>
+                        <th onclick="sortTable(1)">Cantidad 🔄</th>
+                        <th onclick="sortTable(2)">Precio 🔄</th>
+                        <th onclick="sortTable(3)">Valor Total 🔄</th>
+                        <th onclick="sortTable(4)">% Cartera 🔄</th>
+                        <th onclick="sortTable(5)">Retorno 🔄</th>
+                        <th onclick="sortTable(6)">Esta Semana 🔄</th>
                         <th>Estado</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="tableBody">
                     <tr>
                         <td>AAPL (Apple)</td>
                         <td>50</td>
@@ -432,6 +790,7 @@
                         <td>$8,775</td>
                         <td>7.0%</td>
                         <td>+12.5%</td>
+                        <td>+3.2%</td>
                         <td><span class="status-badge status-active">Activo</span></td>
                     </tr>
                     <tr>
@@ -441,6 +800,7 @@
                         <td>$14,885</td>
                         <td>11.9%</td>
                         <td>+8.3%</td>
+                        <td>+2.1%</td>
                         <td><span class="status-badge status-active">Activo</span></td>
                     </tr>
                     <tr>
@@ -450,6 +810,7 @@
                         <td>$25,500</td>
                         <td>20.3%</td>
                         <td>+2.1%</td>
+                        <td>+0.5%</td>
                         <td><span class="status-badge status-active">Activo</span></td>
                     </tr>
                     <tr>
@@ -459,6 +820,7 @@
                         <td>$21,600</td>
                         <td>17.2%</td>
                         <td>+22.8%</td>
+                        <td>+5.6%</td>
                         <td><span class="status-badge status-active">Activo</span></td>
                     </tr>
                     <tr>
@@ -468,6 +830,7 @@
                         <td>$18,720</td>
                         <td>14.9%</td>
                         <td>+18.5%</td>
+                        <td>+4.8%</td>
                         <td><span class="status-badge status-active">Activo</span></td>
                     </tr>
                     <tr>
@@ -477,6 +840,7 @@
                         <td>$1,540</td>
                         <td>1.2%</td>
                         <td>-5.2%</td>
+                        <td>-5.2%</td>
                         <td><span class="status-badge status-inactive">Revisar</span></td>
                     </tr>
                 </tbody>
@@ -485,8 +849,304 @@
         
         <!-- Footer -->
         <div class="footer">
-            <p>Dashboard de Administración de Cartera © 2026 | Última actualización: 19 de Agosto de 2026</p>
+            <p>Dashboard de Administración de Cartera © 2026 | Última actualización: 19 de Agosto de 2026 | Datos simulados para demostración</p>
         </div>
     </div>
+    
+    <script>
+        // Data structure
+        const portfolioData = {
+            assets: [
+                { name: 'AAPL', type: 'acciones', quantity: 50, price: 175.50, value: 8775, allocation: 7.0, return: 12.5, weekReturn: 3.2 },
+                { name: 'MSFT', type: 'acciones', quantity: 35, price: 425.30, value: 14885, allocation: 11.9, return: 8.3, weekReturn: 2.1 },
+                { name: 'Bono USA 10Y', type: 'bonos', quantity: 25, price: 1020, value: 25500, allocation: 20.3, return: 2.1, weekReturn: 0.5 },
+                { name: 'Bitcoin', type: 'crypto', quantity: 0.5, price: 43200, value: 21600, allocation: 17.2, return: 22.8, weekReturn: 5.6 },
+                { name: 'Ethereum', type: 'crypto', quantity: 8, price: 2340, value: 18720, allocation: 14.9, return: 18.5, weekReturn: 4.8 },
+                { name: 'Fondo Mutuo XYZ', type: 'fondos', quantity: 100, price: 15.40, value: 1540, allocation: 1.2, return: -5.2, weekReturn: -5.2 }
+            ],
+            weeklyData: [
+                { week: 'Semana 1', return: 4.2, value: 113200 },
+                { week: 'Semana 2', return: 2.1, value: 115600 },
+                { week: 'Semana 3', return: -1.5, value: 113900 },
+                { week: 'Semana 4', return: 5.8, value: 120450 }
+            ]
+        };
+        
+        let currentFilter = {
+            period: 'week',
+            assetType: '',
+            minReturn: null,
+            maxReturn: null,
+            startDate: null,
+            endDate: null
+        };
+        
+        // Initialize charts
+        function initCharts() {
+            // Performance Chart
+            const perfCtx = document.getElementById('performanceChart').getContext('2d');
+            new Chart(perfCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Semana 1', 'Semana 2', 'Semana 3', 'Semana 4'],
+                    datasets: [{
+                        label: 'Retorno (%)',
+                        data: [4.2, 2.1, -1.5, 5.8],
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: '#8b5cf6',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: { color: '#e2e8f0' }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            ticks: { color: '#94a3b8' },
+                            grid: { color: 'rgba(59, 130, 246, 0.1)' }
+                        },
+                        x: {
+                            ticks: { color: '#94a3b8' },
+                            grid: { color: 'rgba(59, 130, 246, 0.1)' }
+                        }
+                    }
+                }
+            });
+            
+            // Allocation Chart
+            const allocCtx = document.getElementById('allocationChart').getContext('2d');
+            new Chart(allocCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Acciones (USA)', 'Bonos', 'Criptomonedas', 'Fondos Mutuos'],
+                    datasets: [{
+                        data: [45, 25, 32, 1.2],
+                        backgroundColor: [
+                            'rgba(59, 130, 246, 0.8)',
+                            'rgba(139, 92, 246, 0.8)',
+                            'rgba(34, 197, 94, 0.8)',
+                            'rgba(249, 115, 22, 0.8)'
+                        ],
+                        borderColor: '#1e293b',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: { color: '#e2e8f0' }
+                        }
+                    }
+                }
+            });
+            
+            // Value Chart
+            const valueCtx = document.getElementById('valueChart').getContext('2d');
+            new Chart(valueCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Semana 1', 'Semana 2', 'Semana 3', 'Semana 4'],
+                    datasets: [{
+                        label: 'Valor Cartera ($)',
+                        data: [113200, 115600, 113900, 120450],
+                        borderColor: '#8b5cf6',
+                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: '#3b82f6',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: { color: '#e2e8f0' }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            ticks: {
+                                color: '#94a3b8',
+                                callback: function(value) { return '$' + value.toLocaleString(); }
+                            },
+                            grid: { color: 'rgba(59, 130, 246, 0.1)' }
+                        },
+                        x: {
+                            ticks: { color: '#94a3b8' },
+                            grid: { color: 'rgba(59, 130, 246, 0.1)' }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Filter functions
+        function setQuickFilter(filter) {
+            document.querySelectorAll('.filter-tag').forEach(tag => tag.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            if (filter === 'positive') {
+                currentFilter.minReturn = 0;
+                currentFilter.maxReturn = null;
+            } else if (filter === 'negative') {
+                currentFilter.minReturn = null;
+                currentFilter.maxReturn = 0;
+            } else {
+                currentFilter.period = filter;
+                currentFilter.minReturn = null;
+                currentFilter.maxReturn = null;
+            }
+            
+            applyFilters();
+        }
+        
+        function applyFilters() {
+            const period = document.getElementById('dateRange').value;
+            const assetType = document.getElementById('assetType').value;
+            const minReturn = parseFloat(document.getElementById('minReturn').value) || null;
+            const maxReturn = parseFloat(document.getElementById('maxReturn').value) || null;
+            
+            currentFilter = { period, assetType, minReturn, maxReturn };
+            
+            updateStats();
+            updatePeriodLabel();
+        }
+        
+        function resetFilters() {
+            document.getElementById('dateRange').value = 'week';
+            document.getElementById('assetType').value = '';
+            document.getElementById('minReturn').value = '';
+            document.getElementById('maxReturn').value = '';
+            document.getElementById('tableSearch').value = '';
+            document.querySelectorAll('.filter-tag').forEach(tag => tag.classList.remove('active'));
+            document.querySelector('.filter-tag').classList.add('active');
+            
+            currentFilter = { period: 'week', assetType: '', minReturn: null, maxReturn: null };
+            updateStats();
+            updatePeriodLabel();
+            renderTable();
+        }
+        
+        function updatePeriodLabel() {
+            const labels = {
+                week: 'Esta Semana',
+                month: 'Este Mes',
+                quarter: 'Este Trimestre',
+                year: 'Este Año',
+                all: 'Todo el Período'
+            };
+            document.getElementById('periodLabel').textContent = labels[currentFilter.period] || 'Período Custom';
+        }
+        
+        function updateStats() {
+            let filteredAssets = portfolioData.assets;
+            
+            if (currentFilter.assetType) {
+                filteredAssets = filteredAssets.filter(a => a.type === currentFilter.assetType);
+            }
+            
+            if (currentFilter.minReturn !== null) {
+                filteredAssets = filteredAssets.filter(a => a.return >= currentFilter.minReturn);
+            }
+            
+            if (currentFilter.maxReturn !== null) {
+                filteredAssets = filteredAssets.filter(a => a.return <= currentFilter.maxReturn);
+            }
+            
+            document.getElementById('totalAssets').textContent = filteredAssets.length;
+            
+            const winners = filteredAssets.filter(a => a.return > 0).length;
+            document.getElementById('winningAssets').textContent = winners;
+            
+            const avgReturn = filteredAssets.length > 0
+                ? (filteredAssets.reduce((sum, a) => sum + a.return, 0) / filteredAssets.length).toFixed(1)
+                : 0;
+            document.getElementById('avgReturn').textContent = avgReturn > 0 ? '+' + avgReturn + '%' : avgReturn + '%';
+        }
+        
+        function renderTable() {
+            const search = document.getElementById('tableSearch').value.toLowerCase();
+            let filtered = portfolioData.assets;
+            
+            if (currentFilter.assetType) {
+                filtered = filtered.filter(a => a.type === currentFilter.assetType);
+            }
+            
+            if (currentFilter.minReturn !== null) {
+                filtered = filtered.filter(a => a.return >= currentFilter.minReturn);
+            }
+            
+            if (currentFilter.maxReturn !== null) {
+                filtered = filtered.filter(a => a.return <= currentFilter.maxReturn);
+            }
+            
+            if (search) {
+                filtered = filtered.filter(a => a.name.toLowerCase().includes(search));
+            }
+            
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = filtered.map(asset => `
+                <tr>
+                    <td>${asset.name}</td>
+                    <td>${asset.quantity}</td>
+                    <td>$${asset.price.toLocaleString()}</td>
+                    <td>$${asset.value.toLocaleString()}</td>
+                    <td>${asset.allocation}%</td>
+                    <td>${asset.return > 0 ? '+' : ''}${asset.return}%</td>
+                    <td>${asset.weekReturn > 0 ? '+' : ''}${asset.weekReturn}%</td>
+                    <td><span class="status-badge ${asset.return > 0 ? 'status-active' : 'status-inactive'}">
+                        ${asset.return > 0 ? 'Activo' : 'Revisar'}
+                    </span></td>
+                </tr>
+            `).join('');
+        }
+        
+        function sortTable(columnIndex) {
+            // Simple sort implementation
+            const tbody = document.getElementById('tableBody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            
+            rows.sort((a, b) => {
+                const aVal = a.cells[columnIndex].textContent.trim();
+                const bVal = b.cells[columnIndex].textContent.trim();
+                
+                const aNum = parseFloat(aVal.replace(/[^0-9.-]/g, ''));
+                const bNum = parseFloat(bVal.replace(/[^0-9.-]/g, ''));
+                
+                return isNaN(aNum) ? aVal.localeCompare(bVal) : aNum - bNum;
+            });
+            
+            tbody.innerHTML = '';
+            rows.forEach(row => tbody.appendChild(row));
+        }
+        
+        // Event listeners
+        document.getElementById('tableSearch').addEventListener('input', renderTable);
+        document.getElementById('dateRange').addEventListener('change', function() {
+            document.querySelectorAll('.filter-tag').forEach(tag => tag.classList.remove('active'));
+        });
+        
+        // Initialize on load
+        window.addEventListener('load', function() {
+            initCharts();
+            updateStats();
+            updatePeriodLabel();
+            renderTable();
+        });
+    </script>
 </body>
 </html>
