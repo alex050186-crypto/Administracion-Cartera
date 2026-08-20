@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard McM - Gestión de Cartera</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root {
+  --bg-header: #0d2b23;
+  --header2: #164438;
+  --accent: #1fa97c;
+  --accent-dark: #0f6e56;
+  --accent-light: #e1f5ee;
+  --blue: #3d7fd6;
+  --orange: #e8912a;
+  --purple: #6b4fc9;
+  --red: #d64545;
+  --bg-page: #f2f4f1;
+  --bg-card: #ffffff;
+  --text-primary: #151f1c;
+  --text-secondary: #65746f;
+  --border: #e5e8e3;
+  --radius: 12px;
+  --gap: 16px;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  background: var(--bg-page);
+  color: var(--text-primary);
+}
+
+.dashboard-container {
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 18px;
+}
+
+.dashboard-header {
+  background: linear-gradient(120deg, var(--bg-header), var(--header2));
+  color: #fff;
+  padding: 18px 26px;
+  border-radius: var(--radius);
+  margin-bottom: var(--gap);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  box-shadow: 0 4px 20px rgba(13, 43, 35, .25);
+}
+
+.dashboard-header h1 {
+  font-size: 20px;
+  margin: 0;
+  font-weight: 700;
+  letter-spacing: .2px;
+}
+
+.dashboard-header .sub {
+  font-size: 12px;
+  color: #a9c4bb;
+  margin-top: 2px;
+}
+
+.file-upload-section {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: var(--gap);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, .05);
+  border: 2px dashed var(--accent);
+}
+
+.file-upload-label {
+  display: inline-block;
+  padding: 12px 24px;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background .15s;
+}
+
+.file-upload-label:hover {
+  background: var(--accent-dark);
+}
+
+#excelFile {
+  display: none;
+}
+
+.upload-status {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 10px;
+}
+
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: var(--gap);
+}
+
+.kpi-card {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 15px 17px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, .05);
+  border-left: 4px solid var(--accent);
+  position: relative;
+  overflow: hidden;
+  transition: transform .15s, box-shadow .15s;
+}
+
+.kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .08);
+}
+
+.kpi-card.c-blue { border-left-color: var(--blue); }
+.kpi-card.c-orange { border-left-color: var(--orange); }
+.kpi-card.c-purple { border-left-color: var(--purple); }
+.kpi-card.c-red { border-left-color: var(--red); }
+
+.kpi-icon {
+  position: absolute;
+  right: 12px;
+  top: 12px;
+  font-size: 22px;
+  opacity: .15;
+}
+
+.kpi-label {
+  font-size: 10.5px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  margin-bottom: 6px;
+  font-weight: 700;
+}
+
+.kpi-value {
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: -.3px;
+}
+
+.kpi-sub {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+.chart-row {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: var(--gap);
+  margin-bottom: var(--gap);
+}
+
+.chart-row2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--gap);
+  margin-bottom: var(--gap);
+}
+
+.chart-row3 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--gap);
+  margin-bottom: var(--gap);
+}
+
+.chart-container {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 17px 19px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, .05);
+}
+
+.chart-container h3 {
+  font-size: 13px;
+  font-weight: 700;
+  margin: 0 0 12px;
+  color: var(--text-primary);
+}
+
+.chart-container .wrap {
+  position: relative;
+  height: 270px;
+}
+
+.table-section {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 17px 19px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, .05);
+  overflow-x: auto;
+  margin-bottom: var(--gap);
+}
+
+.table-section h3 {
+  font-size: 13px;
+  font-weight: 700;
+  margin: 0 0 12px;
+}
+
+.table-meta {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+}
+
+table.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.data-table thead th {
+  background: #f7f8f6;
+  text-align: left;
+  padding: 9px 11px;
+  border-bottom: 2px solid var(--border);
+  color: var(--text-secondary);
+  font-weight: 700;
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: .3px;
+}
+
+.data-table tbody td {
+  padding: 8px 11px;
+  border-bottom: 1px solid #f0f1ee;
+}
+
+.data-table tbody tr:nth-child(even) {
+  background: #fafbf9;
+}
+
+.data-table tbody tr:hover {
+  background: #eef6f1;
+}
+
+.dashboard-footer {
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-secondary);
+  padding: 16px 0 6px;
+}
+
+.loading {
+  display: none;
+  text-align: center;
+  padding: 20px;
+  font-size: 14px;
+  color: var(--accent);
+}
+
+.loading.active {
+  display: block;
+}
+
+.error-message {
+  display: none;
+  background: #fcebeb;
+  color: #a32d2d;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: var(--gap);
+  border-left: 4px solid #d64545;
+}
+
+.error-message.active {
+  display: block;
+}
+
+@media (max-width: 900px) {
+  .chart-row, .chart-row2 {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="dashboard-container">
+  <header class="dashboard-header">
+    <div>
+      <h1>Dashboard McM</h1>
+      <div class="sub">Análisis de Cartera 2026</div>
+    </div>
+  </header>
+
+  <div class="file-upload-section">
+    <label for="excelFile" class="file-upload-label">📁 Cargar archivo Excel</label>
+    <input type="file" id="excelFile" accept=".xlsx, .xls">
+    <div class="upload-status">Selecciona tu archivo Excel para cargar los datos</div>
+  </div>
+
+  <div class="error-message" id="errorMessage"></div>
+  <div class="loading" id="loading">Cargando datos...</div>
+
+  <div id="dashboardContent" style="display: none;">
+    <!-- KPIs -->
+    <section class="kpi-row">
+      <div class="kpi-card">
+        <div class="kpi-icon">📅</div>
+        <div class="kpi-label">Total de Cortes</div>
+        <div class="kpi-value" id="kpi-cortes">-</div>
+      </div>
+      <div class="kpi-card c-blue">
+        <div class="kpi-icon">📊</div>
+        <div class="kpi-label">Semanas Registradas</div>
+        <div class="kpi-value" id="kpi-semanas">-</div>
+      </div>
+      <div class="kpi-card c-orange">
+        <div class="kpi-icon">📈</div>
+        <div class="kpi-label">Período de Cobertura</div>
+        <div class="kpi-value" id="kpi-periodo" style="font-size: 14px;">-</div>
+      </div>
+      <div class="kpi-card c-purple">
+        <div class="kpi-icon">📉</div>
+        <div class="kpi-label">Meses Incluidos</div>
+        <div class="kpi-value" id="kpi-meses">-</div>
+      </div>
+    </section>
+
+    <!-- Tabla de Datos -->
+    <section class="table-section">
+      <h3>Registro de Cortes Disponibles</h3>
+      <div class="table-meta" id="table-meta">-</div>
+      <div style="max-height: 520px; overflow: auto;">
+        <table class="data-table" id="dataTable">
+          <thead>
+            <tr>
+              <th>Mes</th>
+              <th>Semana</th>
+              <th>Corte</th>
+              <th>Período</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody">
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Gráficas -->
+    <section class="chart-row3">
+      <div class="chart-container">
+        <h3>Distribución de Cortes por Mes</h3>
+        <div class="wrap">
+          <canvas id="chartMeses"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <section class="chart-row3">
+      <div class="chart-container">
+        <h3>Secuencia de Semanas 2026</h3>
+        <div class="wrap">
+          <canvas id="chartSemanas"></canvas>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <footer class="dashboard-footer">
+    Dashboard de Gestión de Cartera McM - Año 2026
+  </footer>
+</div>
+
+<script>
+let charts = {};
+
+// Elementos del DOM
+const fileInput = document.getElementById('excelFile');
+const errorMessage = document.getElementById('errorMessage');
+const loading = document.getElementById('loading');
+const dashboardContent = document.getElementById('dashboardContent');
+
+// Event listener para carga de archivo
+fileInput.addEventListener('change', handleFileUpload);
+
+function handleFileUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  loading.classList.add('active');
+  errorMessage.classList.remove('active');
+  dashboardContent.style.display = 'none';
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      
+      // Obtener la primera hoja
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      
+      // Convertir a JSON
+      const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
+        header: 1,
+        defval: ''
+      });
+
+      // Procesar los datos
+      processData(jsonData);
+      
+      loading.classList.remove('active');
+      dashboardContent.style.display = 'block';
+    } catch (error) {
+      showError('Error al procesar el archivo: ' + error.message);
+      loading.classList.remove('active');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function processData(rawData) {
+  // Filtrar filas vacías y procesar headers
+  const headers = rawData[0];
+  const rows = rawData.slice(1).filter(row => row.some(cell => cell !== '' && cell !== undefined));
+
+  // Extraer datos
+  const data = rows.map(row => ({
+    mes: row[0],
+    semana: row[1],
+    corte: row[2],
+    periodo: row[3]
+  })).filter(item => item.corte !== '' && item.corte !== undefined);
+
+  // Actualizar dashboard
+  updateDashboard(data);
+}
+
+function updateDashboard(data) {
+  // Calcular KPIs
+  const totalCortes = data.length;
+  const totalSemanas = [...new Set(data.map(d => d.semana))].length;
+  const totalMeses = [...new Set(data.map(d => d.mes))].length;
+  
+  const periodos = data.map(d => d.periodo).filter(p => p);
+  const primerPeriodo = periodos[0];
+  const ultimoPeriodo = periodos[periodos.length - 1];
+
+  // Actualizar KPIs
+  document.getElementById('kpi-cortes').textContent = totalCortes;
+  document.getElementById('kpi-semanas').textContent = totalSemanas;
+  document.getElementById('kpi-meses').textContent = totalMeses;
+  document.getElementById('kpi-periodo').textContent = totalSemanas + ' sem.';
+
+  // Actualizar tabla
+  const tableBody = document.getElementById('tableBody');
+  tableBody.innerHTML = data.map((row, idx) => `
+    <tr>
+      <td>${row.mes}</td>
+      <td>${row.semana}</td>
+      <td>${row.corte}</td>
+      <td>${row.periodo}</td>
+    </tr>
+  `).join('');
+
+  document.getElementById('table-meta').textContent = `Total: ${totalCortes} cortes registrados`;
+
+  // Crear gráficas
+  createCharts(data);
+}
+
+function createCharts(data) {
+  // Gráfica 1: Distribución por Meses
+  const mesesCount = {};
+  data.forEach(d => {
+    mesesCount[d.mes] = (mesesCount[d.mes] || 0) + 1;
+  });
+
+  const mesesLabels = Object.keys(mesesCount).sort();
+  const mesesData = mesesLabels.map(m => mesesCount[m]);
+
+  if (charts.meses) charts.meses.destroy();
+  charts.meses = new Chart(document.getElementById('chartMeses'), {
+    type: 'bar',
+    data: {
+      labels: mesesLabels.map(m => 'Mes ' + m),
+      datasets: [{
+        label: 'Cantidad de Cortes',
+        data: mesesData,
+        backgroundColor: '#1fa97c',
+        borderRadius: 8
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: false,
+      plugins: {
+        legend: { display: false }
+      },
+      scales: {
+        y: { beginAtZero: true }
+      }
+    }
+  });
+
+  // Gráfica 2: Secuencia de Semanas
+  const semanas = data.map(d => d.semana).sort((a, b) => a - b);
+  const uniqSemanas = [...new Set(semanas)];
+  const semanesCount = uniqSemanas.map(s => semanas.filter(x => x === s).length);
+
+  if (charts.semanas) charts.semanas.destroy();
+  charts.semanas = new Chart(document.getElementById('chartSemanas'), {
+    type: 'line',
+    data: {
+      labels: uniqSemanas.map(s => 'Semana ' + s),
+      datasets: [{
+        label: 'Frecuencia',
+        data: semanesCount,
+        borderColor: '#3d7fd6',
+        backgroundColor: '#3d7fd622',
+        borderWidth: 2,
+        fill: true,
+        tension: 0.3,
+        pointRadius: 4,
+        pointBackgroundColor: '#3d7fd6'
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: false,
+      plugins: {
+        legend: { display: true }
+      },
+      scales: {
+        y: { beginAtZero: true }
+      }
+    }
+  });
+}
+
+function showError(message) {
+  errorMessage.textContent = message;
+  errorMessage.classList.add('active');
+  loading.classList.remove('active');
+}
+
+// Mostrar instrucciones iniciales
+function showInstructions() {
+  document.querySelector('.upload-status').textContent = 
+    'Carga un archivo Excel .xlsx con estructura de cortes (MES, SEMANA, CORTE, PERÍODO)';
+}
+
+showInstructions();
+</script>
+
+</body>
+</html>
