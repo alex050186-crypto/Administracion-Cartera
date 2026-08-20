@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>McM Dashboard - Administración de Cartera</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 10px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        header h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        header .subtitle {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .upload-section {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+        }
+
+        .file-input-wrapper input[type=file] {
+            position: absolute;
+            left: -9999px;
+        }
+
+        .file-input-label {
+            display: inline-block;
+            padding: 12px 24px;
+            background: #667eea;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .file-input-label:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .file-name {
+            color: #666;
+            font-size: 0.9em;
+            padding: 8px 15px;
+            background: #f0f0f0;
+            border-radius: 5px;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .card h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .metric:last-child {
+            border-bottom: none;
+        }
+
+        .metric-label {
+            color: #666;
+            font-weight: 500;
+        }
+
+        .metric-value {
+            color: #333;
+            font-weight: 700;
+            font-size: 1.1em;
+        }
+
+        .metric-value.positive {
+            color: #10b981;
+        }
+
+        .metric-value.negative {
+            color: #ef4444;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin-bottom: 20px;
+        }
+
+        .full-width {
+            grid-column: 1 / -1;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9em;
+        }
+
+        table thead {
+            background: #f8f9fa;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        table th,
+        table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        table tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            padding: 10px 20px;
+            background: #f0f0f0;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            color: #666;
+        }
+
+        .tab-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-box .value {
+            font-size: 2em;
+            font-weight: 700;
+            margin: 10px 0;
+        }
+
+        .stat-box .label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .no-data {
+            text-align: center;
+            color: #999;
+            padding: 40px 20px;
+            font-style: italic;
+        }
+
+        footer {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.8);
+            margin-top: 30px;
+            font-size: 0.9em;
+        }
+
+        @media (max-width: 768px) {
+            header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            header h1 {
+                font-size: 1.8em;
+            }
+
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+
+            .full-width {
+                grid-column: 1;
+            }
+
+            .chart-container {
+                height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div>
+                <h1>📊 McM Dashboard</h1>
+                <p class="subtitle">Administración de Cartera de Inversiones</p>
+            </div>
+            <div class="upload-section">
+                <div class="file-input-wrapper">
+                    <label class="file-input-label" for="excelFile">
+                        📁 Cargar Excel
+                    </label>
+                    <input type="file" id="excelFile" accept=".xlsx,.xls" />
+                </div>
+                <span class="file-name" id="fileName">Cargando archivo predeterminado...</span>
+            </div>
+        </header>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('overview')">📈 Resumen</button>
+            <button class="tab-btn" onclick="switchTab('investments')">💼 Inversiones</button>
+            <button class="tab-btn" onclick="switchTab('performance')">📊 Desempeño</button>
+            <button class="tab-btn" onclick="switchTab('data')">📋 Datos</button>
+        </div>
+
+        <!-- TAB: OVERVIEW -->
+        <div id="overview" class="tab-content active">
+            <div class="stats-grid" id="statsGrid"></div>
+            <div class="dashboard" id="overviewDashboard"></div>
+        </div>
+
+        <!-- TAB: INVESTMENTS -->
+        <div id="investments" class="tab-content">
+            <div class="dashboard" id="investmentsDashboard"></div>
+        </div>
+
+        <!-- TAB: PERFORMANCE -->
+        <div id="performance" class="tab-content">
+            <div class="dashboard" id="performanceDashboard"></div>
+        </div>
+
+        <!-- TAB: DATA -->
+        <div id="data" class="tab-content">
+            <div class="card full-width">
+                <h3>📊 Datos Completos</h3>
+                <div class="table-responsive" id="dataTable"></div>
+            </div>
+        </div>
+
+        <footer>
+            <p>Dashboard interactivo para gestión de cartera • © 2024 McM Administración</p>
+        </footer>
+    </div>
+
+    <script>
+        let currentData = [];
+        let charts = {};
+
+        // Cargar archivo Excel desde URL o entrada del usuario
+        document.getElementById('excelFile').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    try {
+                        const data = new Uint8Array(event.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        
+                        // Obtener primera hoja disponible
+                        const sheetName = workbook.SheetNames[0];
+                        const worksheet = workbook.Sheets[sheetName];
+                        currentData = XLSX.utils.sheet_to_json(worksheet);
+                        
+                        document.getElementById('fileName').textContent = '✓ ' + file.name;
+                        renderDashboard();
+                    } catch(error) {
+                        console.error('Error al leer Excel:', error);
+                        alert('Error al procesar el archivo Excel');
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            }
+        });
+
+        function switchTab(tabName) {
+            // Ocultar todos los tabs
+            document.querySelectorAll('.tab-content').forEach(el => {
+                el.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-btn').forEach(el => {
+                el.classList.remove('active');
+            });
+
+            // Mostrar tab seleccionado
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function renderDashboard() {
+            if (currentData.length === 0) {
+                document.getElementById('overviewDashboard').innerHTML = 
+                    '<div class="no-data">No hay datos disponibles. Carga un archivo Excel.</div>';
+                return;
+            }
+
+            renderOverview();
+            renderInvestments();
+            renderPerformance();
+            renderDataTable();
+        }
+
+        function renderOverview() {
+            const container = document.getElementById('statsGrid');
+            
+            // Calcular estadísticas
+            const totalInversion = currentData.reduce((sum, item) => {
+                const val = parseFloat(item['Inversión'] || item['Cantidad'] || item['Monto'] || 0);
+                return sum + (isNaN(val) ? 0 : val);
+            }, 0);
+
+            const totalValor = currentData.reduce((sum, item) => {
+                const val = parseFloat(item['Valor Actual'] || item['Precio'] || 0);
+                return sum + (isNaN(val) ? 0 : val);
+            }, 0);
+
+            const gainLoss = totalValor - totalInversion;
+            const gainLossPercent = totalInversion > 0 ? ((gainLoss / totalInversion) * 100).toFixed(2) : 0;
+
+            const stats = [
+                { label: 'Inversión Total', value: `$${totalInversion.toLocaleString('es-ES', {maximumFractionDigits: 2})}` },
+                { label: 'Valor Actual', value: `$${totalValor.toLocaleString('es-ES', {maximumFractionDigits: 2})}` },
+                { label: 'Ganancia/Pérdida', value: `$${gainLoss.toLocaleString('es-ES', {maximumFractionDigits: 2})}`, color: gainLoss >= 0 ? '#10b981' : '#ef4444' },
+                { label: 'Retorno %', value: `${gainLossPercent}%`, color: gainLossPercent >= 0 ? '#10b981' : '#ef4444' },
+            ];
+
+            container.innerHTML = stats.map(stat => `
+                <div class="stat-box" style="${stat.color ? `background: linear-gradient(135deg, ${stat.color} 0%, ${stat.color}dd 100%)` : ''}">
+                    <div class="label">${stat.label}</div>
+                    <div class="value">${stat.value}</div>
+                </div>
+            `).join('');
+
+            // Gráficos Overview
+            const dashboard = document.getElementById('overviewDashboard');
+            dashboard.innerHTML = `
+                <div class="card full-width">
+                    <h3>📊 Distribución de Cartera</h3>
+                    <div class="chart-container">
+                        <canvas id="pieChart"></canvas>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>📈 Análisis Resumen</h3>
+                    <div id="summaryMetrics"></div>
+                </div>
+            `;
+
+            renderPieChart();
+            renderSummaryMetrics();
+        }
+
+        function renderPieChart() {
+            const ctx = document.getElementById('pieChart');
+            if (!ctx) return;
+
+            const labels = currentData.map(item => item['Activo'] || item['Nombre'] || item['Símbolo'] || 'Sin nombre');
+            const values = currentData.map(item => parseFloat(item['Valor Actual'] || item['Monto'] || 0)).filter(v => !isNaN(v) && v > 0);
+
+            const colors = generateColors(values.length);
+
+            if (charts.pie) charts.pie.destroy();
+            charts.pie = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: values,
+                        backgroundColor: colors,
+                        borderColor: '#fff',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderSummaryMetrics() {
+            const container = document.getElementById('summaryMetrics');
+            const metrics = [
+                { label: 'Total de Activos', value: currentData.length },
+                { label: 'Activo Mayor', value: getMaxAsset() },
+                { label: 'Activo Menor', value: getMinAsset() }
+            ];
+
+            container.innerHTML = metrics.map(m => `
+                <div class="metric">
+                    <span class="metric-label">${m.label}</span>
+                    <span class="metric-value">${m.value}</span>
+                </div>
+            `).join('');
+        }
+
+        function renderInvestments() {
+            const container = document.getElementById('investmentsDashboard');
+            
+            if (currentData.length === 0) {
+                container.innerHTML = '<div class="no-data">No hay inversiones registradas</div>';
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="card full-width">
+                    <h3>💼 Detalle de Inversiones</h3>
+                    <div class="chart-container">
+                        <canvas id="barChart"></canvas>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>💰 Top 5 Inversiones</h3>
+                    <div id="top5Investments"></div>
+                </div>
+            `;
+
+            renderBarChart();
+            renderTop5();
+        }
+
+        function renderBarChart() {
+            const ctx = document.getElementById('barChart');
+            if (!ctx) return;
+
+            const labels = currentData.slice(0, 10).map(item => item['Activo'] || item['Nombre'] || 'N/A');
+            const values = currentData.slice(0, 10).map(item => parseFloat(item['Inversión'] || item['Monto'] || 0)).filter(v => !isNaN(v));
+
+            if (charts.bar) charts.bar.destroy();
+            charts.bar = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Inversión ($)',
+                        data: values,
+                        backgroundColor: '#667eea',
+                        borderColor: '#764ba2',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderTop5() {
+            const container = document.getElementById('top5Investments');
+            const sorted = [...currentData]
+                .sort((a, b) => (parseFloat(b['Valor Actual'] || b['Monto'] || 0)) - (parseFloat(a['Valor Actual'] || a['Monto'] || 0)))
+                .slice(0, 5);
+
+            container.innerHTML = sorted.map((item, idx) => `
+                <div class="metric">
+                    <span class="metric-label">${idx + 1}. ${item['Activo'] || 'N/A'}</span>
+                    <span class="metric-value">$${parseFloat(item['Valor Actual'] || 0).toLocaleString('es-ES', {maximumFractionDigits: 2})}</span>
+                </div>
+            `).join('');
+        }
+
+        function renderPerformance() {
+            const container = document.getElementById('performanceDashboard');
+
+            container.innerHTML = `
+                <div class="card full-width">
+                    <h3>📊 Línea de Desempeño</h3>
+                    <div class="chart-container">
+                        <canvas id="lineChart"></canvas>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>📈 Análisis de Retorno</h3>
+                    <div id="returnAnalysis"></div>
+                </div>
+            `;
+
+            renderLineChart();
+            renderReturnAnalysis();
+        }
+
+        function renderLineChart() {
+            const ctx = document.getElementById('lineChart');
+            if (!ctx) return;
+
+            const labels = currentData.map((_, i) => `Activo ${i + 1}`);
+            const investedValues = currentData.map(item => parseFloat(item['Inversión'] || 0)).filter(v => !isNaN(v));
+            const currentValues = currentData.map(item => parseFloat(item['Valor Actual'] || 0)).filter(v => !isNaN(v));
+
+            if (charts.line) charts.line.destroy();
+            charts.line = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Inversión Inicial',
+                            data: investedValues,
+                            borderColor: '#667eea',
+                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Valor Actual',
+                            data: currentValues,
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderReturnAnalysis() {
+            const container = document.getElementById('returnAnalysis');
+            const analysis = currentData
+                .map(item => ({
+                    name: item['Activo'] || 'N/A',
+                    invested: parseFloat(item['Inversión'] || 0),
+                    current: parseFloat(item['Valor Actual'] || 0),
+                }))
+                .filter(a => a.invested > 0)
+                .map(a => ({
+                    ...a,
+                    gainLoss: a.current - a.invested,
+                    returnPct: ((a.gainLoss / a.invested) * 100).toFixed(2)
+                }))
+                .sort((a, b) => b.returnPct - a.returnPct)
+                .slice(0, 10);
+
+            container.innerHTML = analysis.map(item => `
+                <div class="metric">
+                    <span class="metric-label">${item.name}</span>
+                    <span class="metric-value ${item.returnPct >= 0 ? 'positive' : 'negative'}">
+                        ${item.returnPct >= 0 ? '+' : ''}${item.returnPct}%
+                    </span>
+                </div>
+            `).join('');
+        }
+
+        function renderDataTable() {
+            const container = document.getElementById('dataTable');
+            
+            if (currentData.length === 0) {
+                container.innerHTML = '<div class="no-data">No hay datos para mostrar</div>';
+                return;
+            }
+
+            const keys = Object.keys(currentData[0]);
+            const tableHTML = `
+                <table>
+                    <thead>
+                        <tr>${keys.map(k => `<th>${k}</th>`).join('')}</tr>
+                    </thead>
+                    <tbody>
+                        ${currentData.map(row => `
+                            <tr>${keys.map(k => `<td>${row[k] || '-'}</td>`).join('')}</tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            container.innerHTML = tableHTML;
+        }
+
+        function generateColors(count) {
+            const colors = [
+                '#667eea', '#764ba2', '#f093fb', '#4facfe', '#00f2fe',
+                '#43e97b', '#38f9d7', '#fa709a', '#fee140', '#30cfd0'
+            ];
+            const result = [];
+            for (let i = 0; i < count; i++) {
+                result.push(colors[i % colors.length]);
+            }
+            return result;
+        }
+
+        function getMaxAsset() {
+            if (currentData.length === 0) return 'N/A';
+            const max = currentData.reduce((prev, current) => 
+                (parseFloat(current['Valor Actual'] || 0) > parseFloat(prev['Valor Actual'] || 0)) ? current : prev
+            );
+            return max['Activo'] || 'N/A';
+        }
+
+        function getMinAsset() {
+            if (currentData.length === 0) return 'N/A';
+            const nonZeroData = currentData.filter(item => parseFloat(item['Valor Actual'] || 0) > 0);
+            if (nonZeroData.length === 0) return 'N/A';
+            const min = nonZeroData.reduce((prev, current) => 
+                (parseFloat(current['Valor Actual'] || 0) < parseFloat(prev['Valor Actual'] || 0)) ? current : prev
+            );
+            return min['Activo'] || 'N/A';
+        }
+
+        // Cargar datos de ejemplo al iniciar
+        window.addEventListener('load', function() {
+            // Datos de ejemplo si no hay archivo cargado
+            currentData = [
+                { 'Activo': 'BTC', 'Inversión': 5000, 'Valor Actual': 6500, 'Rentabilidad': '30%' },
+                { 'Activo': 'ETH', 'Inversión': 3000, 'Valor Actual': 3800, 'Rentabilidad': '26.7%' },
+                { 'Activo': 'AAPL', 'Inversión': 2000, 'Valor Actual': 2200, 'Rentabilidad': '10%' },
+                { 'Activo': 'MSFT', 'Inversión': 2500, 'Valor Actual': 2700, 'Rentabilidad': '8%' },
+                { 'Activo': 'GOOGL', 'Inversión': 3000, 'Valor Actual': 3100, 'Rentabilidad': '3.3%' }
+            ];
+            
+            document.getElementById('fileName').textContent = '📊 Datos de ejemplo cargados';
+            renderDashboard();
+        });
+    </script>
+</body>
+</html>
